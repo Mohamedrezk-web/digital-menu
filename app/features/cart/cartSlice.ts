@@ -1,10 +1,20 @@
-// app/features/cart/cartSlice.ts
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-interface CartItem {
+export interface OptionChoice {
+  name: string;
+  additionalPrice: number;
+}
+
+export interface SelectedOption {
+  category: string;
+  selectedChoices: OptionChoice[];
+}
+
+export interface CartItem {
   id: string;
   name: string;
-  price: number;
+  basePrice: number;
+  selectedOptions?: SelectedOption[];
   quantity: number;
 }
 
@@ -18,13 +28,49 @@ const initialState: CartState =
     ? JSON.parse(localStorage.getItem('cart') || '{"items":[],"total":0}')
     : { items: [], total: 0 };
 
+const calculateItemPrice = (item: CartItem): number => {
+  let optionsPrice = 0;
+  if (item.selectedOptions) {
+    for (const option of item.selectedOptions) {
+      optionsPrice += option.selectedChoices.reduce(
+        (sum, choice) => sum + choice.additionalPrice,
+        0
+      );
+    }
+  }
+  return item.basePrice + optionsPrice;
+};
+
+const calculateTotal = (items: CartItem[]) =>
+  items.reduce(
+    (sum, item) => sum + calculateItemPrice(item) * item.quantity,
+    0
+  );
+
+interface AddItemPayload {
+  id: string;
+  name: string;
+  basePrice: number;
+  selectedOptions?: SelectedOption[];
+}
+
 const cartSlice = createSlice({
   name: 'cart',
   initialState,
   reducers: {
-    addItem: (state, action: PayloadAction<Omit<CartItem, 'quantity'>>) => {
+    addItem: (state, action: PayloadAction<AddItemPayload>) => {
+      // Generate a key that uniquely identifies the item including its options.
+      const itemKey = JSON.stringify({
+        id: action.payload.id,
+        selectedOptions: action.payload.selectedOptions || [],
+      });
+      // Check for an existing item with the same id and options.
       const existingItem = state.items.find(
-        (item) => item.id === action.payload.id
+        (item) =>
+          JSON.stringify({
+            id: item.id,
+            selectedOptions: item.selectedOptions || [],
+          }) === itemKey
       );
       if (existingItem) {
         existingItem.quantity += 1;
@@ -59,10 +105,6 @@ const cartSlice = createSlice({
     },
   },
 });
-
-const calculateTotal = (items: CartItem[]) => {
-  return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-};
 
 export const {
   addItem,
