@@ -1,6 +1,4 @@
-// components/Cart.tsx
 'use client';
-
 import { Button } from '@/components/ui/button';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/app/store';
@@ -10,9 +8,14 @@ import {
   removeItem,
   clearCart,
 } from '@/app/features/cart/cartSlice';
-import { X, ShoppingCart } from 'lucide-react';
+import { X, ShoppingCart, ChevronsUpDown } from 'lucide-react';
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 
 export default function Cart() {
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -24,7 +27,6 @@ export default function Cart() {
 
   return (
     <div className='fixed right-4 bottom-4 z-50'>
-      {/* Floating Cart Icon */}
       <Button
         variant='default'
         size='lg'
@@ -39,7 +41,6 @@ export default function Cart() {
         )}
       </Button>
 
-      {/* Cart Content */}
       <AnimatePresence>
         {isCartOpen && (
           <motion.div
@@ -65,41 +66,75 @@ export default function Cart() {
               <>
                 <div className='space-y-4 mb-4 max-h-96 overflow-y-auto'>
                   {cartItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className='flex justify-between items-center'
-                    >
-                      <div>
+                    <div className='flex flex-col gap-2' key={item.id}>
+                      <div className='flex justify-between items-center gap-2'>
                         <p className='font-medium'>{item.name}</p>
-                        <p className='text-sm text-muted-foreground'>
-                          ${item.price.toFixed(2)} x {item.quantity}
-                        </p>
+                        <div className='flex items-center gap-2'>
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            onClick={() => dispatch(decrementQuantity(item.id))}
+                          >
+                            -
+                          </Button>
+                          <span className='text-sm w-6 text-center'>
+                            {item.quantity}
+                          </span>
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            onClick={() => dispatch(incrementQuantity(item.id))}
+                          >
+                            +
+                          </Button>
+                          <Button
+                            variant='ghost'
+                            size='sm'
+                            onClick={() => dispatch(removeItem(item.id))}
+                          >
+                            <X className='h-4 w-4' />
+                          </Button>
+                        </div>
                       </div>
-                      <div className='flex items-center gap-2'>
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          onClick={() => dispatch(decrementQuantity(item.id))}
-                        >
-                          -
-                        </Button>
-                        <span className='text-sm w-6 text-center'>
-                          {item.quantity}
-                        </span>
-                        <Button
-                          variant='outline'
-                          size='sm'
-                          onClick={() => dispatch(incrementQuantity(item.id))}
-                        >
-                          +
-                        </Button>
-                        <Button
-                          variant='ghost'
-                          size='sm'
-                          onClick={() => dispatch(removeItem(item.id))}
-                        >
-                          <X className='h-4 w-4' />
-                        </Button>
+                      <div className='flex flex-col justify-between gap-1 relative'>
+                        <p className='text-sm text-muted-foreground mt-1'>
+                          ${item.basePrice.toFixed(2)} x {item.quantity}
+                        </p>
+
+                        {(item.selectedOptions ?? []).length > 0 && (
+                          <Collapsible>
+                            <CollapsibleTrigger className='absolute right-0 top-0'>
+                              <Button variant='ghost' size='sm'>
+                                <ChevronsUpDown className='h-4 w-4' />
+                                <span className='sr-only'>Toggle</span>
+                              </Button>{' '}
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              {(item.selectedOptions ?? []).map((option) => (
+                                <div
+                                  key={option.category}
+                                  className='text-xs text-muted-foreground ml-2'
+                                >
+                                  <span className='font-medium'>
+                                    {option.category}:{' '}
+                                  </span>
+                                  {option.selectedChoices.map(
+                                    (choice, index) => (
+                                      <span key={choice.name}>
+                                        {choice.name} (+$
+                                        {choice.additionalPrice.toFixed(2)})
+                                        {index !==
+                                        option.selectedChoices.length - 1
+                                          ? ', '
+                                          : ''}
+                                      </span>
+                                    )
+                                  )}
+                                </div>
+                              ))}
+                            </CollapsibleContent>
+                          </Collapsible>
+                        )}
                       </div>
                     </div>
                   ))}

@@ -90,7 +90,7 @@ export function CategoryList({ categories, className }: CategoryListProps) {
     <div
       ref={containerRef}
       className={cn(
-        'flex gap-4 overflow-x-auto py-4 scrollbar-hide',
+        'flex gap-4 overflow-x-auto py-4 scrollbar-hide ',
         className
       )}
     >
